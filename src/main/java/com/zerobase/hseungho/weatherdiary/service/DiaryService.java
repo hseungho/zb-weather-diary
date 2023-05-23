@@ -9,7 +9,6 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class DiaryService {
 
-
     public void createDiary(LocalDate date, String text) {
 
     }
