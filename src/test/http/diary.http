@@ -1,0 +1,5 @@
+### create diary
+POST http://localhost:8080/create/diary?date=2023-05-20
+Content-Type: text/plain
+
+오늘 코딩 재밌다.

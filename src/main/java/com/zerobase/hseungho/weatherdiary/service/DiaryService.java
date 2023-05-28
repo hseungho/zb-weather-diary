@@ -1,6 +1,10 @@
 package com.zerobase.hseungho.weatherdiary.service;
 
+import com.zerobase.hseungho.weatherdiary.domain.Diary;
+import com.zerobase.hseungho.weatherdiary.dto.WeatherApiDto;
+import com.zerobase.hseungho.weatherdiary.repository.DiaryRepository;
 import lombok.RequiredArgsConstructor;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -12,8 +16,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -22,12 +24,15 @@ public class DiaryService {
     @Value("${openweathermap.key}")
     private String apiKey;
 
+    private final DiaryRepository diaryRepository;
+
     public void createDiary(LocalDate date, String text) {
         String weatherData = getWeatherString();
 
-        Map<String, Object> parsedWeather = parseWeather(weatherData);
+        WeatherApiDto weatherDto = parseWeather(weatherData);
 
-
+        Diary nowDiary = Diary.of(weatherDto, text, date);
+        diaryRepository.save(nowDiary);
     }
 
     private String getWeatherString() {
@@ -56,7 +61,7 @@ public class DiaryService {
         }
     }
 
-    private Map<String, Object> parseWeather(String jsonString) {
+    private WeatherApiDto parseWeather(String jsonString) {
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject;
 
@@ -65,13 +70,15 @@ public class DiaryService {
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
-        Map<String, Object> resultMap = new HashMap<>();
-        JSONObject weatherData = (JSONObject) jsonObject.get("weather");
-        resultMap.put("main", weatherData.get("main"));
-        resultMap.put("icon", weatherData.get("icon"));
+        JSONArray weatherArray = (JSONArray) jsonObject.get("weather");
+        JSONObject weatherData = (JSONObject) weatherArray.get(0);
         JSONObject mainData = (JSONObject) jsonObject.get("main");
-        resultMap.put("temp", mainData.get("temp"));
-        return resultMap;
+
+        return WeatherApiDto.builder()
+                .weather(weatherData.get("main").toString())
+                .icon(weatherData.get("icon").toString())
+                .temperature(Double.parseDouble(mainData.get("temp").toString()))
+                .build();
     }
 
 }
