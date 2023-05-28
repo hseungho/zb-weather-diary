@@ -12,6 +12,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
@@ -23,6 +24,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DiaryService {
 
     @Value("${openweathermap.key}")
@@ -30,7 +32,7 @@ public class DiaryService {
 
     private final DiaryRepository diaryRepository;
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void createDiary(LocalDate date, String text) {
         String weatherData = getWeatherString();
 
@@ -40,17 +42,15 @@ public class DiaryService {
         diaryRepository.save(nowDiary);
     }
 
-    @Transactional
     public List<Diary> readDiary(LocalDate date) {
         return diaryRepository.findAllByDate(date);
     }
 
-    @Transactional
     public List<Diary> readDiaries(LocalDate startDate, LocalDate endDate) {
         return diaryRepository.findAllByDateBetween(startDate, endDate);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateDiary(LocalDate date, String text) {
         Diary diary = diaryRepository.getFirstByDate(date)
                 .orElseThrow(() -> new NotFoundException("다이어리를 찾을 수 없습니다."));
@@ -58,7 +58,7 @@ public class DiaryService {
         diaryRepository.save(diary);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteDiary(LocalDate date) {
         diaryRepository.deleteAllByDate(date);
     }

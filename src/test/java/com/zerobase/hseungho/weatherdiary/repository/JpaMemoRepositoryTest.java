@@ -1,7 +1,6 @@
 package com.zerobase.hseungho.weatherdiary.repository;
 
 import com.zerobase.hseungho.weatherdiary.domain.Memo;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,7 +33,6 @@ class JpaMemoRepositoryTest {
     }
 
     @Test
-    @DisplayName("")
     void findByIdTest() {
         // given
         final int id = 11;
