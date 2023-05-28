@@ -17,3 +17,11 @@ create table diary(
     created_at timestamp not null ,
     updated_at timestamp
 );
+
+DROP TABLE IF EXISTS date_weather;
+create table date_weather(
+    date Date not null primary key ,
+    weather varchar(50) not null ,
+    icon varchar(50) not null ,
+    temperature double not null
+);
