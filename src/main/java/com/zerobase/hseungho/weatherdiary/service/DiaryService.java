@@ -1,9 +1,11 @@
 package com.zerobase.hseungho.weatherdiary.service;
 
+import com.zerobase.hseungho.weatherdiary.domain.DateWeather;
 import com.zerobase.hseungho.weatherdiary.domain.Diary;
 import com.zerobase.hseungho.weatherdiary.dto.WeatherApi;
 import com.zerobase.hseungho.weatherdiary.global.exception.InternalServerErrorException;
 import com.zerobase.hseungho.weatherdiary.global.exception.NotFoundException;
+import com.zerobase.hseungho.weatherdiary.repository.DateWeatherRepository;
 import com.zerobase.hseungho.weatherdiary.repository.DiaryRepository;
 import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
@@ -11,9 +13,11 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -28,17 +32,20 @@ public class DiaryService {
 
     @Value("${openweathermap.key}")
     private String apiKey;
-
     private final DiaryRepository diaryRepository;
+    private final DateWeatherRepository dateWeatherRepository;
+
+    @Transactional
+    @Scheduled(cron = "0 0 1 * * *")
+    public void saveWeatherDate() {
+        dateWeatherRepository.save(getWeatherFromApi());
+    }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void createDiary(LocalDate date, String text) {
-        String weatherData = getWeatherString();
+        DateWeather dateWeather = getDateWeather(date);
 
-        WeatherApi.Response weatherDto = parseWeather(weatherData);
-
-        Diary nowDiary = Diary.of(weatherDto, text, date);
-        diaryRepository.save(nowDiary);
+        diaryRepository.save(Diary.of(dateWeather, text, date));
     }
 
     @Transactional(readOnly = true)
@@ -62,6 +69,20 @@ public class DiaryService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteDiary(LocalDate date) {
         diaryRepository.deleteAllByDate(date);
+    }
+
+    private DateWeather getWeatherFromApi() {
+        String weatherData = getWeatherString();
+
+        WeatherApi.Response weatherDto = parseWeather(weatherData);
+
+        return DateWeather.of(weatherDto.getWeather(), weatherDto.getIcon(), weatherDto.getTemperature());
+    }
+
+    private DateWeather getDateWeather(LocalDate date) {
+        List<DateWeather> weathers = dateWeatherRepository.findAllByDate(date);
+
+        return CollectionUtils.isEmpty(weathers) ? getWeatherFromApi() : weathers.get(0);
     }
 
     private String getWeatherString() {

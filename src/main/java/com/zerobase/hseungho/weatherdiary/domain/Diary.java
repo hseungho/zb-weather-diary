@@ -1,6 +1,5 @@
 package com.zerobase.hseungho.weatherdiary.domain;
 
-import com.zerobase.hseungho.weatherdiary.dto.WeatherApi;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,8 +28,8 @@ public class Diary extends BaseEntity {
         return new Diary(weather, icon, temperature, text, date);
     }
 
-    public static Diary of(WeatherApi.Response dto, String text, LocalDate date) {
-        return Diary.of(dto.getWeather(), dto.getIcon(), dto.getTemperature(), text, date);
+    public static Diary of(DateWeather weather, String text, LocalDate date) {
+        return Diary.of(weather.getWeather(), weather.getIcon(), weather.getTemperature(), text, date);
     }
 
     public void updateText(String text) {
