@@ -1,7 +1,7 @@
 package com.zerobase.hseungho.weatherdiary.service;
 
 import com.zerobase.hseungho.weatherdiary.domain.Diary;
-import com.zerobase.hseungho.weatherdiary.dto.WeatherApiDto;
+import com.zerobase.hseungho.weatherdiary.dto.WeatherApi;
 import com.zerobase.hseungho.weatherdiary.global.exception.InternalServerErrorException;
 import com.zerobase.hseungho.weatherdiary.global.exception.NotFoundException;
 import com.zerobase.hseungho.weatherdiary.repository.DiaryRepository;
@@ -34,7 +34,7 @@ public class DiaryService {
     public void createDiary(LocalDate date, String text) {
         String weatherData = getWeatherString();
 
-        WeatherApiDto weatherDto = parseWeather(weatherData);
+        WeatherApi.Response weatherDto = parseWeather(weatherData);
 
         Diary nowDiary = Diary.of(weatherDto, text, date);
         diaryRepository.save(nowDiary);
@@ -89,7 +89,7 @@ public class DiaryService {
         }
     }
 
-    private WeatherApiDto parseWeather(String jsonString) {
+    private WeatherApi.Response parseWeather(String jsonString) {
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject;
 
@@ -102,7 +102,7 @@ public class DiaryService {
         JSONObject weatherData = (JSONObject) weatherArray.get(0);
         JSONObject mainData = (JSONObject) jsonObject.get("main");
 
-        return WeatherApiDto.builder()
+        return WeatherApi.Response.builder()
                 .weather(weatherData.get("main").toString())
                 .icon(weatherData.get("icon").toString())
                 .temperature(Double.parseDouble(mainData.get("temp").toString()))
