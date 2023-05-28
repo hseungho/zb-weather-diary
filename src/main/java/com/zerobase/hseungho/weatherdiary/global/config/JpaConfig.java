@@ -1,4 +1,4 @@
-package com.zerobase.hseungho.weatherdiary.config;
+package com.zerobase.hseungho.weatherdiary.global.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;

@@ -26,10 +26,15 @@ public class DiaryController {
         return diaryService.readDiary(date);
     }
 
-    @GetMapping("/diary")
+    @GetMapping("/diaries")
     public List<Diary> readDiaries(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                    @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return diaryService.readDiaries(startDate, endDate);
     }
 
+    @PutMapping("/diary")
+    public void updateDiary(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                            @RequestBody String text) {
+        diaryService.updateDiary(date, text);
+    }
 }

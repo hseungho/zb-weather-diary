@@ -5,6 +5,7 @@ create table memo (
     created_at timestamp not null ,
     updated_at timestamp
 );
+
 DROP TABLE IF EXISTS diary;
 create table diary(
     id int not null primary key auto_increment,

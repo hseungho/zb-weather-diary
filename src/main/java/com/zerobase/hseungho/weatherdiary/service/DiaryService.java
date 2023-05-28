@@ -2,6 +2,8 @@ package com.zerobase.hseungho.weatherdiary.service;
 
 import com.zerobase.hseungho.weatherdiary.domain.Diary;
 import com.zerobase.hseungho.weatherdiary.dto.WeatherApiDto;
+import com.zerobase.hseungho.weatherdiary.global.exception.InternalServerErrorException;
+import com.zerobase.hseungho.weatherdiary.global.exception.NotFoundException;
 import com.zerobase.hseungho.weatherdiary.repository.DiaryRepository;
 import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
@@ -48,6 +50,14 @@ public class DiaryService {
         return diaryRepository.findAllByDateBetween(startDate, endDate);
     }
 
+    @Transactional
+    public void updateDiary(LocalDate date, String text) {
+        Diary diary = diaryRepository.getFirstByDate(date)
+                .orElseThrow(() -> new NotFoundException("다이어리를 찾을 수 없습니다."));
+        diary.updateText(text);
+        diaryRepository.save(diary);
+    }
+
     private String getWeatherString() {
         try {
             URL url = new URL("https://api.openweathermap.org/data/2.5/weather?q=seoul&appid=" + apiKey);
@@ -81,7 +91,7 @@ public class DiaryService {
         try {
             jsonObject = (JSONObject) jsonParser.parse(jsonString);
         } catch (ParseException e) {
-            throw new RuntimeException(e);
+            throw new InternalServerErrorException("날씨 API 기능을 수행하는데에 오류가 발생하였습니다.");
         }
         JSONArray weatherArray = (JSONArray) jsonObject.get("weather");
         JSONObject weatherData = (JSONObject) weatherArray.get(0);

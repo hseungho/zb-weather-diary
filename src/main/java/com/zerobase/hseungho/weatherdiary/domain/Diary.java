@@ -33,4 +33,7 @@ public class Diary extends BaseEntity {
         return Diary.of(dto.getWeather(), dto.getIcon(), dto.getTemperature(), text, date);
     }
 
+    public void updateText(String text) {
+        this.text = text;
+    }
 }
