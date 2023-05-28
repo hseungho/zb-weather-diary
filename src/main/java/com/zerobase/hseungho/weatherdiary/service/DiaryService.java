@@ -1,9 +1,11 @@
 package com.zerobase.hseungho.weatherdiary.service;
 
+import com.zerobase.hseungho.weatherdiary.WeatherDiaryApplication;
 import com.zerobase.hseungho.weatherdiary.domain.DateWeather;
 import com.zerobase.hseungho.weatherdiary.domain.Diary;
 import com.zerobase.hseungho.weatherdiary.dto.OpenWeatherApi;
 import com.zerobase.hseungho.weatherdiary.global.exception.InternalServerErrorException;
+import com.zerobase.hseungho.weatherdiary.global.exception.InvalidDateException;
 import com.zerobase.hseungho.weatherdiary.global.exception.NotFoundException;
 import com.zerobase.hseungho.weatherdiary.repository.DateWeatherRepository;
 import com.zerobase.hseungho.weatherdiary.repository.DiaryRepository;
@@ -12,6 +14,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -29,6 +33,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DiaryService {
+    private static final Logger log = LoggerFactory.getLogger(WeatherDiaryApplication.class);
 
     @Value("${openweathermap.key}")
     private String apiKey;
@@ -38,37 +43,54 @@ public class DiaryService {
     @Transactional
     @Scheduled(cron = "0 0 1 * * *")
     public void saveWeatherDate() {
+        log.info("success get weather date on scheduled.");
         dateWeatherRepository.save(getWeatherFromApi());
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void createDiary(LocalDate date, String text) {
-        DateWeather dateWeather = getDateWeather(date);
+//        validateDate(date);
 
+        DateWeather dateWeather = getDateWeather(date);
         diaryRepository.save(Diary.of(dateWeather, text, date));
+        log.info("success create diary. date={}", date);
     }
 
     @Transactional(readOnly = true)
     public List<Diary> readDiary(LocalDate date) {
+        log.debug("request read diary. date={}", date);
+
+        validateDate(date);
+
         return diaryRepository.findAllByDate(date);
     }
 
     @Transactional(readOnly = true)
     public List<Diary> readDiaries(LocalDate startDate, LocalDate endDate) {
+        log.debug("request read diaries between {} - {}.", startDate, endDate);
+
+        validateDates(startDate, endDate);
+
         return diaryRepository.findAllByDateBetween(startDate, endDate);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateDiary(LocalDate date, String text) {
+        validateDate(date);
+
         Diary diary = diaryRepository.getFirstByDate(date)
                 .orElseThrow(() -> new NotFoundException("다이어리를 찾을 수 없습니다."));
         diary.updateText(text);
         diaryRepository.save(diary);
+        log.info("success update diary. date={}.", date);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteDiary(LocalDate date) {
+        validateDate(date);
+
         diaryRepository.deleteAllByDate(date);
+        log.info("success delete diary. date={}", date);
     }
 
     private DateWeather getWeatherFromApi() {
@@ -87,6 +109,8 @@ public class DiaryService {
 
     private String getWeatherString() {
         try {
+            log.info("start get open weather api.");
+
             URL url = new URL("https://api.openweathermap.org/data/2.5/weather?q=seoul&appid=" + apiKey);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
@@ -105,6 +129,7 @@ public class DiaryService {
             }
             br.close();
 
+            log.info("finish get open weather api.");
             return response.toString();
         } catch (Exception e) {
             return "failed to get response";
@@ -118,6 +143,7 @@ public class DiaryService {
         try {
             jsonObject = (JSONObject) jsonParser.parse(jsonString);
         } catch (ParseException e) {
+            log.error("occurred error that json parsing, while open api used. json={}", jsonString);
             throw new InternalServerErrorException("날씨 API 기능을 수행하는데에 오류가 발생하였습니다.");
         }
         JSONArray weatherArray = (JSONArray) jsonObject.get("weather");
@@ -129,6 +155,18 @@ public class DiaryService {
                 .icon(weatherData.get("icon").toString())
                 .temperature(Double.parseDouble(mainData.get("temp").toString()))
                 .build();
+    }
+
+    private void validateDates(LocalDate... dates) {
+        for (LocalDate date : dates) {
+            validateDate(date);
+        }
+    }
+
+    private void validateDate(LocalDate date) {
+        if (date.isAfter(LocalDate.ofYearDay(3050, 1))) {
+            throw new InvalidDateException();
+        }
     }
 
 }
