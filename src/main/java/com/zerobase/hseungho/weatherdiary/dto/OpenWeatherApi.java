@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 
-public class WeatherApi {
+public class OpenWeatherApi {
     @Getter
     @Builder
     @NoArgsConstructor
