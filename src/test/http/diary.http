@@ -1,5 +1,11 @@
 ### create diary
-POST http://localhost:8080/create/diary?date=2023-05-20
+POST http://localhost:8080/diary?date=2023-02-20
 Content-Type: text/plain
 
 오늘 코딩 재밌다.
+
+### read diary
+GET http://localhost:8080/diary?date=2023-05-20
+
+### read diaries
+GET http://localhost:8080/diary?startDate=2023-03-20&endDate=2023-05-20

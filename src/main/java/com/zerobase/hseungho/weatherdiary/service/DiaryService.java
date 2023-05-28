@@ -10,12 +10,14 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class DiaryService {
 
     private final DiaryRepository diaryRepository;
 
+    @Transactional
     public void createDiary(LocalDate date, String text) {
         String weatherData = getWeatherString();
 
@@ -33,6 +36,16 @@ public class DiaryService {
 
         Diary nowDiary = Diary.of(weatherDto, text, date);
         diaryRepository.save(nowDiary);
+    }
+
+    @Transactional
+    public List<Diary> readDiary(LocalDate date) {
+        return diaryRepository.findAllByDate(date);
+    }
+
+    @Transactional
+    public List<Diary> readDiaries(LocalDate startDate, LocalDate endDate) {
+        return diaryRepository.findAllByDateBetween(startDate, endDate);
     }
 
     private String getWeatherString() {
