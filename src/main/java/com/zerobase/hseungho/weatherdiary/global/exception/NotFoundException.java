@@ -1,7 +1,12 @@
 package com.zerobase.hseungho.weatherdiary.global.exception;
 
-public class NotFoundException extends RuntimeException {
+import com.zerobase.hseungho.weatherdiary.global.exception.code.DiaryErrorCode;
+
+public class NotFoundException extends DiaryException {
+    public NotFoundException() {
+        super(DiaryErrorCode.NOT_FOUND);
+    }
     public NotFoundException(String msg) {
-        super(msg);
+        super(DiaryErrorCode.NOT_FOUND, msg);
     }
 }

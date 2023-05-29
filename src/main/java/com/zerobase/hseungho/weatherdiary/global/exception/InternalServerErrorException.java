@@ -1,7 +1,12 @@
 package com.zerobase.hseungho.weatherdiary.global.exception;
 
-public class InternalServerErrorException extends RuntimeException {
-    public InternalServerErrorException(String msg) {
-        super(msg);
+import com.zerobase.hseungho.weatherdiary.global.exception.code.DiaryErrorCode;
+
+public class InternalServerErrorException extends DiaryException {
+    public InternalServerErrorException() {
+        super(DiaryErrorCode.INTERNAL_SERVER_ERROR);
+    }
+    public InternalServerErrorException(String message) {
+        super(DiaryErrorCode.INTERNAL_SERVER_ERROR, message);
     }
 }

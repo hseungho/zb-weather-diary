@@ -3,6 +3,7 @@ package com.zerobase.hseungho.weatherdiary.service;
 import com.zerobase.hseungho.weatherdiary.WeatherDiaryApplication;
 import com.zerobase.hseungho.weatherdiary.domain.DateWeather;
 import com.zerobase.hseungho.weatherdiary.domain.Diary;
+import com.zerobase.hseungho.weatherdiary.dto.DiaryDto;
 import com.zerobase.hseungho.weatherdiary.dto.OpenWeatherApi;
 import com.zerobase.hseungho.weatherdiary.global.exception.InternalServerErrorException;
 import com.zerobase.hseungho.weatherdiary.global.exception.InvalidDateException;
@@ -29,6 +30,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,41 +50,47 @@ public class DiaryService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void createDiary(LocalDate date, String text) {
-//        validateDate(date);
+    public DiaryDto createDiary(LocalDate date, String text) {
+        validateDate(date);
 
         DateWeather dateWeather = getDateWeather(date);
-        diaryRepository.save(Diary.of(dateWeather, text, date));
-        log.info("success create diary. date={}", date);
+        Diary newDiary = diaryRepository.save(Diary.of(dateWeather, text, date));
+        log.info("success create diary. diary_id={}", newDiary.getId());
+        return DiaryDto.fromEntity(newDiary);
     }
 
     @Transactional(readOnly = true)
-    public List<Diary> readDiary(LocalDate date) {
+    public List<DiaryDto> readDiary(LocalDate date) {
         log.debug("request read diary. date={}", date);
 
         validateDate(date);
 
-        return diaryRepository.findAllByDate(date);
+        return diaryRepository.findAllByDate(date).stream()
+                .map(DiaryDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<Diary> readDiaries(LocalDate startDate, LocalDate endDate) {
+    public List<DiaryDto> readDiaries(LocalDate startDate, LocalDate endDate) {
         log.debug("request read diaries between {} - {}.", startDate, endDate);
 
         validateDates(startDate, endDate);
 
-        return diaryRepository.findAllByDateBetween(startDate, endDate);
+        return diaryRepository.findAllByDateBetween(startDate, endDate).stream()
+                .map(DiaryDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void updateDiary(LocalDate date, String text) {
+    public DiaryDto updateDiary(LocalDate date, String text) {
         validateDate(date);
 
         Diary diary = diaryRepository.getFirstByDate(date)
                 .orElseThrow(() -> new NotFoundException("다이어리를 찾을 수 없습니다."));
         diary.updateText(text);
-        diaryRepository.save(diary);
-        log.info("success update diary. date={}.", date);
+        Diary updateDiary = diaryRepository.save(diary);
+        log.info("success update diary. diary_id={}.", updateDiary.getId());
+        return DiaryDto.fromEntity(updateDiary);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -120,6 +128,7 @@ public class DiaryService {
             if (code == 200) {
                 br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             } else {
+                log.error("get error response open weather api. code={}", code);
                 br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
             }
             String inputLine;
@@ -132,6 +141,7 @@ public class DiaryService {
             log.info("finish get open weather api.");
             return response.toString();
         } catch (Exception e) {
+            log.error("failed to get open weather api response by exception.", e);
             return "failed to get response";
         }
     }
@@ -165,6 +175,7 @@ public class DiaryService {
 
     private void validateDate(LocalDate date) {
         if (date.isAfter(LocalDate.ofYearDay(3050, 1))) {
+            log.error("request invalid date. date={}", date);
             throw new InvalidDateException();
         }
     }
